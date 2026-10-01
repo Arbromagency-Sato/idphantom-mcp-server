@@ -90,14 +90,20 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 
   const name = readStringFlag(flags, "name", env.PHANTOM_AGENT_NAME ?? "phantom-agent");
   const routerAddress = readStringFlag(flags, "router-address", env.PHANTOM_ROUTER_ADDRESS);
-  const privateKey = readStringFlag(flags, "payer-private-key", env.PHANTOM_PAYER_PRIVATE_KEY);
+  // AGP-057: la clave privada SOLO entra por variable de entorno. Pasarla por
+  // argv (--payer-private-key) queda rechazado: argv queda expuesto en el
+  // historial de shell, ps y logs de CI.
+  if (flags["payer-private-key"] !== undefined) {
+    throw new Error("--payer-private-key was removed: set PHANTOM_PAYER_PRIVATE_KEY via environment instead (argv is visible in shell history and process listings)");
+  }
+  const privateKey = env.PHANTOM_PAYER_PRIVATE_KEY;
   const timeoutMs = readNumberFlag(flags, "timeout-ms", 180_000);
   const pollMs = readNumberFlag(flags, "poll-interval-ms", 3_000);
   if (!routerAddress) {
     throw new Error("PHANTOM_ROUTER_ADDRESS or --router-address is required to sign the registration payment");
   }
   if (!privateKey) {
-    throw new Error("PHANTOM_PAYER_PRIVATE_KEY or --payer-private-key is required for init");
+    throw new Error("PHANTOM_PAYER_PRIVATE_KEY is required for init (environment variable only, never a command-line flag)");
   }
   if (!ethers.isAddress(routerAddress)) {
     throw new Error("router address is invalid");
@@ -192,12 +198,14 @@ export async function runInit(options: InitOptions): Promise<InitResult> {
 
 export function initUsage(): string {
   return [
-    "Usage: phantom-mcp-server init --router-address <0x...> --payer-private-key <0x...> [--name agent-name]",
+    "Usage: phantom-mcp-server init --router-address <0x...> [--name agent-name]",
     "",
     "Environment:",
     "  PHANTOM_API_URL              PHANTOM API URL (defaults to production)",
     "  PHANTOM_ROUTER_ADDRESS       PhantomRouter verifying contract",
     "  PHANTOM_PAYER_PRIVATE_KEY    Wallet key used only for local signatures",
+    "                               (environment only; the old --payer-private-key",
+    "                               flag was removed — argv leaks into shell history)",
     "",
   ].join("\n");
 }

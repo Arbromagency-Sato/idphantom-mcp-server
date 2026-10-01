@@ -7,7 +7,7 @@ import { execFileSync, spawn } from "node:child_process";
 import { resolve } from "node:path";
 
 const INDEX = resolve(__dirname, "../dist/src/index.js");
-const TSC = resolve(__dirname, "../../../node_modules/typescript/bin/tsc");
+const TSC = resolve(__dirname, "../../node_modules/typescript/bin/tsc");
 let built = false;
 
 function ensureBuilt() {

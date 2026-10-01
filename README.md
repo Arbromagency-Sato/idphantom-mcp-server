@@ -53,13 +53,14 @@ The init flow calls:
 
 On success it prints the account id and the API key once. Store the returned key as `PHANTOM_API_KEY`.
 
-You can pass flags instead of environment variables:
+Flags are supported for non-sensitive options. The payer key is environment-only
+(never a flag — command lines leak into shell history and process listings):
 
 ```sh
+export PHANTOM_PAYER_PRIVATE_KEY="0x..."
 npx @phantomid/mcp-server init \
   --api-url https://pay.idphantom.com \
   --router-address 0x... \
-  --payer-private-key 0x... \
   --name my-agent
 ```
 

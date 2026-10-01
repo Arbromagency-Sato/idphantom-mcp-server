@@ -72,11 +72,10 @@ describe("phantom MCP init command", () => {
       argv: [
         "--api-url", "https://phantom.test",
         "--router-address", ROUTER,
-        "--payer-private-key", payer.privateKey,
         "--name", "agent-one",
         "--poll-interval-ms", "1",
       ],
-      env: {},
+      env: { PHANTOM_PAYER_PRIVATE_KEY: payer.privateKey },
       fetchImpl,
       stdout: { write: (chunk: string | Uint8Array) => { writes.push(String(chunk)); return true; } },
       sleep: async () => undefined,
@@ -96,5 +95,33 @@ describe("phantom MCP init command", () => {
       `POST https://phantom.test/v1/register/${reference}/claim`,
     ]);
     expect(writes.join("")).not.toContain(payer.privateKey);
+  });
+
+  it("rejects --payer-private-key on the command line (AGP-057)", async () => {
+    const payer = Wallet.createRandom();
+    await expect(
+      runInit({
+        argv: [
+          "--router-address", ROUTER,
+          "--payer-private-key", payer.privateKey,
+        ],
+        env: {},
+        fetchImpl: async () => { throw new Error("should not be called"); },
+        stdout: { write: () => true },
+        sleep: async () => undefined,
+      })
+    ).rejects.toThrow(/--payer-private-key was removed/);
+  });
+
+  it("requires PHANTOM_PAYER_PRIVATE_KEY from the environment", async () => {
+    await expect(
+      runInit({
+        argv: ["--router-address", ROUTER],
+        env: {},
+        fetchImpl: async () => { throw new Error("should not be called"); },
+        stdout: { write: () => true },
+        sleep: async () => undefined,
+      })
+    ).rejects.toThrow(/PHANTOM_PAYER_PRIVATE_KEY is required/);
   });
 });
