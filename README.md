@@ -5,7 +5,7 @@
 Production defaults to:
 
 ```text
-https://phantom-id-2fys.onrender.com
+https://pay.idphantom.com
 ```
 
 ## Install
@@ -23,7 +23,7 @@ For MCP clients, configure the server command and environment:
       "command": "npx",
       "args": ["@phantomid/mcp-server"],
       "env": {
-        "PHANTOM_API_URL": "https://phantom-id-2fys.onrender.com",
+        "PHANTOM_API_URL": "https://pay.idphantom.com",
         "PHANTOM_API_KEY": "pk_live_..."
       }
     }
@@ -57,7 +57,7 @@ You can pass flags instead of environment variables:
 
 ```sh
 npx @phantomid/mcp-server init \
-  --api-url https://phantom-id-2fys.onrender.com \
+  --api-url https://pay.idphantom.com \
   --router-address 0x... \
   --payer-private-key 0x... \
   --name my-agent

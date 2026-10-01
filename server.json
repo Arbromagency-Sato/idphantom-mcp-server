@@ -17,7 +17,7 @@
       },
       "environmentVariables": [
         {
-          "description": "PHANTOM API base URL (default https://phantom-id-2fys.onrender.com)",
+          "description": "PHANTOM API base URL (default https://pay.idphantom.com)",
           "isRequired": false,
           "format": "string",
           "isSecret": false,

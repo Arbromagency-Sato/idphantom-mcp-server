@@ -1,4 +1,4 @@
-export const DEFAULT_API_URL = "https://phantom-id-2fys.onrender.com";
+export const DEFAULT_API_URL = "https://pay.idphantom.com";
 
 export interface CliConfig {
   apiUrl: string;
