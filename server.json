@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Arbromagency-Sato/phantom-mcp-server",
+  "description": "PHANTOM ID MCP payment server: agent-to-agent USDC payments on Base.",
+  "repository": {
+    "url": "https://github.com/Arbromagency-Sato/idphantom-mcp-server",
+    "source": "github"
+  },
+  "version": "0.1.4",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@phantomid/mcp-server",
+      "version": "0.1.4",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "description": "PHANTOM API base URL (default https://phantom-id-2fys.onrender.com)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "PHANTOM_API_URL"
+        },
+        {
+          "description": "PHANTOM API key for the agent account (create via POST /v1/register or /admin/accounts)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true,
+          "name": "PHANTOM_API_KEY"
+        }
+      ]
+    }
+  ]
+}
