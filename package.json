@@ -1,6 +1,6 @@
 {
   "name": "@phantomid/mcp-server",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "mcpName": "io.github.Arbromagency-Sato/phantom-mcp-server",
   "private": false,
   "description": "IDPHANTOM MCP payment server for agent-to-agent USDC payments on Base.",
@@ -28,6 +28,7 @@
   "files": [
     "dist/src",
     "README.md",
+    "NOTICE",
     "package.json"
   ],
   "engines": {

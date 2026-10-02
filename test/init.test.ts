@@ -71,6 +71,7 @@ describe("phantom MCP init command", () => {
     const result = await runInit({
       argv: [
         "--api-url", "https://phantom.test",
+        "--allow-custom-api-url",
         "--router-address", ROUTER,
         "--name", "agent-one",
         "--poll-interval-ms", "1",

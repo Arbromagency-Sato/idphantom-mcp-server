@@ -17,7 +17,7 @@ describe("phantom MCP server", () => {
 
   it("resolves production env config and sends PHANTOM_API_KEY upstream", async () => {
     expect(resolveCliConfig([], {})).toEqual({ apiUrl: DEFAULT_API_URL });
-    expect(resolveCliConfig(["--api-url", "https://flag.test/"], { PHANTOM_API_URL: "https://env.test" })).toEqual({
+    expect(resolveCliConfig(["--api-url", "https://flag.test/"], { PHANTOM_API_URL: "https://env.test", PHANTOM_ALLOW_CUSTOM_API_URL: "1" })).toEqual({
       apiUrl: "https://flag.test",
     });
     expect(() => resolveCliConfig([], { PHANTOM_API_URL: "http://evil.example.com" })).toThrow(/insecure/);
@@ -117,5 +117,33 @@ describe("phantom MCP server", () => {
     expect(JSON.parse(((res?.result as { content: { text: string }[] }).content[0].text))).toEqual({
       verified: true,
     });
+  });
+});
+
+// AGP-064 (auditoría externa, Fase 5): allowlist de orígenes para PHANTOM_API_URL.
+describe("API URL trust boundary (AGP-064)", () => {
+  it("acepta pay.idphantom.com y api.idphantom.com sin override", () => {
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://pay.idphantom.com" }).apiUrl).toBe("https://pay.idphantom.com");
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://api.idphantom.com/" }).apiUrl).toBe("https://api.idphantom.com");
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://staging.pay.idphantom.com" }).apiUrl).toBe("https://staging.pay.idphantom.com");
+  });
+
+  it("rechaza http remoto (regla previa, sin cambios)", () => {
+    expect(() => resolveCliConfig([], { PHANTOM_API_URL: "http://evil.com" })).toThrow(/insecure/);
+  });
+
+  it("rechaza https a host no confiable sin override explícito", () => {
+    expect(() => resolveCliConfig([], { PHANTOM_API_URL: "https://evil.com" })).toThrow(/Untrusted PHANTOM_API_URL host 'evil\.com'/);
+    expect(() => resolveCliConfig(["--api-url", "https://attacker.example"], {})).toThrow(/Untrusted PHANTOM_API_URL host/);
+  });
+
+  it("acepta host no confiable solo con override explícito", () => {
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://evil.com", PHANTOM_ALLOW_CUSTOM_API_URL: "1" }).apiUrl).toBe("https://evil.com");
+    expect(resolveCliConfig(["--api-url", "https://staging.internal", "--allow-custom-api-url"], {}).apiUrl).toBe("https://staging.internal");
+  });
+
+  it("localhost sigue permitido en http sin override", () => {
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "http://localhost:3000" }).apiUrl).toBe("http://localhost:3000");
+    expect(resolveCliConfig([], { PHANTOM_API_URL: "http://127.0.0.1:8787" }).apiUrl).toBe("http://127.0.0.1:8787");
   });
 });
