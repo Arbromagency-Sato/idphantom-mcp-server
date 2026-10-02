@@ -155,3 +155,26 @@ Payments above those limits are rejected by the PHANTOM ID API.
 ```sh
 npm publish --access public
 ```
+
+## Custom API endpoints (AGP-064)
+
+By default the client only sends credentials to trusted IDPHANTOM origins
+(`*.idphantom.com`, `localhost`, `127.0.0.1`). If you run a custom or
+self-hosted endpoint, allow it explicitly:
+
+```sh
+export PHANTOM_ALLOW_CUSTOM_API_URL=1
+```
+
+or pass `--allow-custom-api-url`. Without the override, an untrusted
+`PHANTOM_API_URL` is refused before any credential is transmitted.
+
+## License
+
+MIT — see [LICENSE](./LICENSE). The MIT License applies solely to the source
+code contained in this repository and distributed as the
+`@phantomid/mcp-server` connector. The IDPHANTOM hosted service, APIs, backend
+infrastructure, payment engine, internal algorithms, transaction
+orchestration, risk systems, databases and other server-side components are
+separate proprietary systems and are not licensed under this repository's
+MIT License. See [NOTICE](./NOTICE).

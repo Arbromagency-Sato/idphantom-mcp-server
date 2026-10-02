@@ -202,6 +202,8 @@ export function initUsage(): string {
     "",
     "Environment:",
     "  PHANTOM_API_URL              PHANTOM API URL (defaults to production)",
+    "  PHANTOM_ALLOW_CUSTOM_API_URL Set to 1 to allow non-IDPHANTOM API URLs",
+    "                               (production credentials go to this URL)",
     "  PHANTOM_ROUTER_ADDRESS       PhantomRouter verifying contract",
     "  PHANTOM_PAYER_PRIVATE_KEY    Wallet key used only for local signatures",
     "                               (environment only; the old --payer-private-key",
