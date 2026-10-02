@@ -1,52 +1,6 @@
-Business Source License 1.1
-
-License text copyright (c) 2017 MariaDB Corporation Ab, All Rights Reserved.
-"Business Source License" is a trademark of MariaDB Corporation Ab.
-
------------------------------------------------------------------------------
-
-Terms
-
-The Licensor hereby grants you the right to copy, modify, create derivative
-works, redistribute, and make non-production use of the Licensed Work. The
-Licensor may make an Additional Use Grant, above, permitting limited
-production use.
-
-Effective on the Change Date, or the fourth anniversary of the first publicly
-available distribution of a specific version of the Licensed Work under this
-License, whichever comes first, the Licensor hereby grants you rights under
-the terms of the Change License, and the terms of the Business Source License
-no longer apply.
-
-As of the Change Date, this software is made available under the terms of
-the MIT License (see below).
-
-For the avoidance of doubt, Additional Use Grants above are subject to the
-single change date for this project.
-
------------------------------------------------------------------------------
-Additional Use Grant:
-
-Use of the Licensed Work in production by any third party that is not the
-Licensor, a Licensor affiliate, or a party holding a valid commercial
-agreement with the Licensor requires a commercial license from the Licensor.
-Reading, auditing, evaluating, and non-production experimentation with the
-Licensed Work are unrestricted.
-
------------------------------------------------------------------------------
-Change Date:          2029-09-30
-
-Change License:       MIT
-
------------------------------------------------------------------------------
-Licensed Work:        IDPHANTOM MCP Server (@phantomid/mcp-server)
-Additional Use Grant: See section "Additional Use Grant" above.
-Change Date:          2029-09-30
-Change License:       MIT
-
------------------------------------------------------------------------------
-
 MIT License
+
+Copyright (c) 2026 PHANTOM ID
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -66,6 +20,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
------------------------------------------------------------------------------
-
-Copyright (c) 2026 DatalabiA. All Rights Reserved.
+------------------------------------------------------------------------------
+Nota sobre alcance de la licencia (AGP-059): esta licencia MIT aplica
+únicamente al CLIENTE MCP publicado en este repositorio (@phantomid/mcp-server).
+El NÚCLEO de PHANTOM ID (backend de settlement, motor de fees, ledger,
+contratos de negocio y toda la lógica propietaria en el repositorio privado
+phantom-id) permanece bajo BUSL-1.1 y NO se concede bajo esta licencia.

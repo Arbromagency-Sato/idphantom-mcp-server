@@ -1,6 +1,6 @@
 {
   "name": "@phantomid/mcp-server",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "mcpName": "io.github.Arbromagency-Sato/phantom-mcp-server",
   "private": false,
   "description": "IDPHANTOM MCP payment server for agent-to-agent USDC payments on Base.",
@@ -21,7 +21,7 @@
     "type": "git",
     "url": "https://github.com/Arbromagency-Sato/idphantom-mcp-server"
   },
-  "license": "BUSL-1.1",
+  "license": "MIT",
   "bin": {
     "phantom-mcp-server": "dist/src/index.js"
   },
