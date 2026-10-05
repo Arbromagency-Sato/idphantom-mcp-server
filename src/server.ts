@@ -155,7 +155,9 @@ const TOOLS = [
       "detects the challenge (v1/v2), validates it against your account policy (allowed domains, " +
       "per-payment cap, daily cap), signs the EIP-3009 authorization server-side and retries with " +
       "the payment header. The agent never handles x402 itself. Retries with the same " +
-      "idempotency_key never double-pay. The spend is debited from your IDPHANTOM account ledger.",
+      "idempotency_key return the stored receipt instead of paying again. The payment is funded by " +
+      "the IDPHANTOM x402 payer wallet under per-domain caps and a global daily cap; per-account " +
+      "ledger billing is planned as a follow-up.",
     inputSchema: {
       type: "object",
       required: ["url", "idempotency_key"],
