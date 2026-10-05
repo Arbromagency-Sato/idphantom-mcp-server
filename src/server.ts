@@ -147,6 +147,32 @@ const TOOLS = [
       openWorldHint: true,
     },
   },
+  {
+    name: "pay_url",
+    title: "Pay an x402-gated URL",
+    description:
+      "Pay any URL that demands HTTP 402 payment (x402 protocol, USDC on Base): the IDPHANTOM API " +
+      "detects the challenge (v1/v2), validates it against your account policy (allowed domains, " +
+      "per-payment cap, daily cap), signs the EIP-3009 authorization server-side and retries with " +
+      "the payment header. The agent never handles x402 itself. Retries with the same " +
+      "idempotency_key never double-pay. The spend is debited from your IDPHANTOM account ledger.",
+    inputSchema: {
+      type: "object",
+      required: ["url", "idempotency_key"],
+      properties: {
+        url: { type: "string", description: "The URL to fetch and pay if it responds 402, e.g. https://pay.idphantom.com/v1/demo/premium." },
+        idempotency_key: { type: "string", description: "Unique client-generated key; safe retries return the stored receipt instead of paying again." },
+      },
+    },
+    outputSchema: TOOL_OUTPUT_SCHEMA,
+    annotations: {
+      title: "Pay an x402-gated URL",
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+  },
 ] as const;
 
 export function mcpTools(): unknown[] {
@@ -165,7 +191,7 @@ export function createMcpHandler(config: PhantomMcpConfig) {
     if (request.method === "initialize") {
       return ok(id, {
         protocolVersion: "2025-06-18",
-        serverInfo: { name: "phantom-mcp-server", version: "0.1.4" },
+        serverInfo: { name: "phantom-mcp-server", version: "0.2.0" },
         capabilities: { tools: {} },
       });
     }
@@ -210,6 +236,13 @@ async function callTool(
     const id = requireString(args.payment_intent_id, "payment_intent_id");
     const receipt = args.receipt_id ? `&receipt_id=${encodeURIComponent(String(args.receipt_id))}` : "";
     response = await getJson(fetchImpl, `${baseUrl}/v1/receipts/verify?payment_intent_id=${encodeURIComponent(id)}${receipt}`, apiKey);
+  } else if (name === "pay_url") {
+    const url = requireString(args.url, "url");
+    const idem = requireString(args.idempotency_key, "idempotency_key");
+    response = await postJson(fetchImpl, `${baseUrl}/v1/x402/pay`, {
+      url,
+      idempotency_key: idem,
+    }, apiKey);
   } else {
     return text({ error: { code: "tool_not_found", message: `Unknown MCP tool: ${name ?? ""}` } }, true);
   }

@@ -12,6 +12,7 @@ describe("phantom MCP server", () => {
       "authorize_payment",
       "submit_payment",
       "verify_payment",
+      "pay_url",
     ]);
   });
 
@@ -89,8 +90,66 @@ describe("phantom MCP server", () => {
     });
   });
 
-  it("proxies verify_payment with receipt id", async () => {
-    const calls: string[] = [];
+  it("proxies pay_url to POST /v1/x402/pay with the API key (AGP-072)", async () => {
+    const calls: { url: string; init?: RequestInit }[] = [];
+    const handle = createMcpHandler({
+      apiBaseUrl: "https://phantom.test",
+      apiKey: "pk_live_test",
+      fetchImpl: async (url, init) => {
+        calls.push({ url, init });
+        return {
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({
+            receipt: { url: "https://example.com/premium", settled: true, amount: "1000", x402_version: 2 },
+            idempotent: false,
+          }),
+        };
+      },
+    });
+
+    const res = await handle({
+      jsonrpc: "2.0",
+      id: "call-pay",
+      method: "tools/call",
+      params: {
+        name: "pay_url",
+        arguments: {
+          url: "https://example.com/premium",
+          idempotency_key: "ik_x402_1",
+        },
+      },
+    });
+
+    expect(calls[0].url).toBe("https://phantom.test/v1/x402/pay");
+    expect(calls[0].init?.method).toBe("POST");
+    expect((calls[0].init?.headers as Record<string, string>).authorization).toBe("Bearer pk_live_test");
+    expect(JSON.parse(calls[0].init?.body as string)).toEqual({
+      url: "https://example.com/premium",
+      idempotency_key: "ik_x402_1",
+    });
+    expect(JSON.parse((res?.result as { content: { text: string }[] }).content[0].text)).toMatchObject({
+      receipt: { settled: true },
+      idempotent: false,
+    });
+  });
+
+  it("pay_url exige url e idempotency_key", async () => {
+    const handle = createMcpHandler({ apiBaseUrl: "https://phantom.test" });
+    const res = await handle({
+      jsonrpc: "2.0",
+      id: "call-pay-bad",
+      method: "tools/call",
+      params: { name: "pay_url", arguments: { url: "https://example.com" } },
+    });
+    const out = JSON.parse((res?.result as { content: { text: string }[]; isError?: boolean }).content[0].text) as {
+      error: { code: string; message: string };
+    };
+    expect(out.error.code).toBe("tool_error");
+    expect(out.error.message).toMatch(/idempotency_key is required/);
+  });
+
+  it("proxies verify_payment with receipt id", async () => {    const calls: string[] = [];
     const handle = createMcpHandler({
       apiBaseUrl: "https://phantom.test",
       fetchImpl: async (url) => {

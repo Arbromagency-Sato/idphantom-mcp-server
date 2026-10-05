@@ -1,0 +1,12 @@
+# Dependencias y artefactos de build: nunca en el repo (un git add -A no
+# debe poder subirlos; dist/ se publica a npm por el workflow de release).
+node_modules/
+dist/
+*.tgz
+
+# Variables de entorno y claves locales (patrón amplio: cubre .env, deploy.env, ...)
+.env
+.env.*
+*.env
+!.env.example
+!.env.sample
