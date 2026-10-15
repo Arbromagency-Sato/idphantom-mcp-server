@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createMcpHandler, type JsonRpcRequest } from "./server";
 import { resolveCliConfig } from "./config";
+import { createFunnel } from "./funnel";
 
 const argv = process.argv.slice(2);
 if (argv[0] === "init") {
@@ -10,7 +11,16 @@ if (argv[0] === "init") {
   });
 } else {
   const config = resolveCliConfig(argv);
-  const handle = createMcpHandler({ apiBaseUrl: config.apiUrl, apiKey: config.apiKey });
+  // AGP-100 F1.4: evento install del funnel (taggeado por PHANTOM_FUNNEL_SOURCE).
+  createFunnel(config.funnelSource ?? "external").emit("install", { api_url: config.apiUrl });
+  const handle = createMcpHandler({
+    apiBaseUrl: config.apiUrl,
+    apiKey: config.apiKey,
+    payerPrivateKey: config.payerPrivateKey,
+    funderPrivateKey: config.funderPrivateKey,
+    routerAddress: config.routerAddress,
+    funnelSource: config.funnelSource,
+  });
 
   let buffer = "";
 

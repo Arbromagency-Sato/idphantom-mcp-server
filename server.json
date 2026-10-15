@@ -6,7 +6,7 @@
     "url": "https://github.com/Arbromagency-Sato/idphantom-mcp-server",
     "source": "github"
   },
-  "version": "0.2.1",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "npm",
@@ -24,7 +24,7 @@
           "name": "PHANTOM_API_URL"
         },
         {
-          "description": "PHANTOM API key for the agent account (create via POST /v1/register — self-serve, $2 USDC on Base)",
+          "description": "PHANTOM API key for the agent account (create via POST /v1/register \u00e2\u20ac\u201d self-serve, $2 USDC on Base)",
           "isRequired": true,
           "format": "string",
           "isSecret": true,

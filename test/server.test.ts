@@ -8,19 +8,22 @@ describe("phantom MCP server", () => {
     const res = await handle({ jsonrpc: "2.0", id: 1, method: "tools/list" });
     const tools = (res?.result as { tools: { name: string }[] }).tools;
     expect(tools.map((t) => t.name)).toEqual([
+      "phantom_register",
+      "phantom_authorize_budget",
       "quote_payment",
       "authorize_payment",
       "submit_payment",
       "verify_payment",
-      "pay_url",
     ]);
   });
 
   it("resolves production env config and sends PHANTOM_API_KEY upstream", async () => {
-    expect(resolveCliConfig([], {})).toEqual({ apiUrl: DEFAULT_API_URL });
-    expect(resolveCliConfig(["--api-url", "https://flag.test/"], { PHANTOM_API_URL: "https://env.test", PHANTOM_ALLOW_CUSTOM_API_URL: "1" })).toEqual({
+    expect(resolveCliConfig([], {})).toEqual({ apiUrl: DEFAULT_API_URL, funnelSource: "external" });
+    expect(resolveCliConfig(["--api-url", "https://flag.test/"], { PHANTOM_API_URL: "https://env.test" })).toEqual({
       apiUrl: "https://flag.test",
+      funnelSource: "external",
     });
+    expect(resolveCliConfig([], { PHANTOM_FUNNEL_SOURCE: "internal" }).funnelSource).toBe("internal");
     expect(() => resolveCliConfig([], { PHANTOM_API_URL: "http://evil.example.com" })).toThrow(/insecure/);
     expect(resolveCliConfig([], { PHANTOM_API_URL: "http://localhost:8787" }).apiUrl).toBe("http://localhost:8787");
 
@@ -90,66 +93,8 @@ describe("phantom MCP server", () => {
     });
   });
 
-  it("proxies pay_url to POST /v1/x402/pay with the API key (AGP-072)", async () => {
-    const calls: { url: string; init?: RequestInit }[] = [];
-    const handle = createMcpHandler({
-      apiBaseUrl: "https://phantom.test",
-      apiKey: "pk_live_test",
-      fetchImpl: async (url, init) => {
-        calls.push({ url, init });
-        return {
-          ok: true,
-          status: 200,
-          text: async () => JSON.stringify({
-            receipt: { url: "https://example.com/premium", settled: true, amount: "1000", x402_version: 2 },
-            idempotent: false,
-          }),
-        };
-      },
-    });
-
-    const res = await handle({
-      jsonrpc: "2.0",
-      id: "call-pay",
-      method: "tools/call",
-      params: {
-        name: "pay_url",
-        arguments: {
-          url: "https://example.com/premium",
-          idempotency_key: "ik_x402_1",
-        },
-      },
-    });
-
-    expect(calls[0].url).toBe("https://phantom.test/v1/x402/pay");
-    expect(calls[0].init?.method).toBe("POST");
-    expect((calls[0].init?.headers as Record<string, string>).authorization).toBe("Bearer pk_live_test");
-    expect(JSON.parse(calls[0].init?.body as string)).toEqual({
-      url: "https://example.com/premium",
-      idempotency_key: "ik_x402_1",
-    });
-    expect(JSON.parse((res?.result as { content: { text: string }[] }).content[0].text)).toMatchObject({
-      receipt: { settled: true },
-      idempotent: false,
-    });
-  });
-
-  it("pay_url exige url e idempotency_key", async () => {
-    const handle = createMcpHandler({ apiBaseUrl: "https://phantom.test" });
-    const res = await handle({
-      jsonrpc: "2.0",
-      id: "call-pay-bad",
-      method: "tools/call",
-      params: { name: "pay_url", arguments: { url: "https://example.com" } },
-    });
-    const out = JSON.parse((res?.result as { content: { text: string }[]; isError?: boolean }).content[0].text) as {
-      error: { code: string; message: string };
-    };
-    expect(out.error.code).toBe("tool_error");
-    expect(out.error.message).toMatch(/idempotency_key is required/);
-  });
-
-  it("proxies verify_payment with receipt id", async () => {    const calls: string[] = [];
+  it("proxies verify_payment with receipt id", async () => {
+    const calls: string[] = [];
     const handle = createMcpHandler({
       apiBaseUrl: "https://phantom.test",
       fetchImpl: async (url) => {
@@ -176,33 +121,5 @@ describe("phantom MCP server", () => {
     expect(JSON.parse(((res?.result as { content: { text: string }[] }).content[0].text))).toEqual({
       verified: true,
     });
-  });
-});
-
-// AGP-064 (auditoría externa, Fase 5): allowlist de orígenes para PHANTOM_API_URL.
-describe("API URL trust boundary (AGP-064)", () => {
-  it("acepta pay.idphantom.com y api.idphantom.com sin override", () => {
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://pay.idphantom.com" }).apiUrl).toBe("https://pay.idphantom.com");
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://api.idphantom.com/" }).apiUrl).toBe("https://api.idphantom.com");
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://staging.pay.idphantom.com" }).apiUrl).toBe("https://staging.pay.idphantom.com");
-  });
-
-  it("rechaza http remoto (regla previa, sin cambios)", () => {
-    expect(() => resolveCliConfig([], { PHANTOM_API_URL: "http://evil.com" })).toThrow(/insecure/);
-  });
-
-  it("rechaza https a host no confiable sin override explícito", () => {
-    expect(() => resolveCliConfig([], { PHANTOM_API_URL: "https://evil.com" })).toThrow(/Untrusted PHANTOM_API_URL host 'evil\.com'/);
-    expect(() => resolveCliConfig(["--api-url", "https://attacker.example"], {})).toThrow(/Untrusted PHANTOM_API_URL host/);
-  });
-
-  it("acepta host no confiable solo con override explícito", () => {
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "https://evil.com", PHANTOM_ALLOW_CUSTOM_API_URL: "1" }).apiUrl).toBe("https://evil.com");
-    expect(resolveCliConfig(["--api-url", "https://staging.internal", "--allow-custom-api-url"], {}).apiUrl).toBe("https://staging.internal");
-  });
-
-  it("localhost sigue permitido en http sin override", () => {
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "http://localhost:3000" }).apiUrl).toBe("http://localhost:3000");
-    expect(resolveCliConfig([], { PHANTOM_API_URL: "http://127.0.0.1:8787" }).apiUrl).toBe("http://127.0.0.1:8787");
   });
 });

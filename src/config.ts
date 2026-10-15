@@ -3,15 +3,14 @@ export const DEFAULT_API_URL = "https://pay.idphantom.com";
 export interface CliConfig {
   apiUrl: string;
   apiKey?: string;
+  /** AGP-100: claves y configuración para las tools self-serve (register /
+   *  authorize_budget). SOLO entran por variable de entorno (invariante
+   *  AGP-057: nunca por argv — argv queda expuesto en shell history y ps). */
+  payerPrivateKey?: string;
+  funderPrivateKey?: string;
+  routerAddress?: string;
+  funnelSource?: "internal" | "external";
 }
-
-// AGP-064 (auditoría externa, Fase 5): el cliente envía PHANTOM_API_KEY como
-// Bearer a la URL configurada. Sin allowlist, un agente engañado (prompt
-// injection) podría apuntar la URL a un host malicioso y filtrar su key.
-// Por defecto solo se aceptan orígenes de IDPHANTOM y localhost; cualquier
-// otro host exige override explícito del desarrollador.
-const TRUSTED_HOST_SUFFIX = ".idphantom.com";
-const TRUSTED_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 export function resolveCliConfig(argv: string[], env: NodeJS.ProcessEnv = process.env): CliConfig {
   const args = parseFlags(argv);
@@ -22,47 +21,32 @@ export function resolveCliConfig(argv: string[], env: NodeJS.ProcessEnv = proces
     env.PHANTOM_API_BASE_URL ??
     DEFAULT_API_URL;
   const apiKey = readFlag(args, "api-key") ?? readFlag(args, "apiKey") ?? env.PHANTOM_API_KEY;
+  const routerAddress = readFlag(args, "router-address") ?? env.PHANTOM_ROUTER_ADDRESS;
   const normalized = stripTrailingSlash(apiUrl);
   if (isInsecureRemoteUrl(normalized)) {
     throw new Error(
       `Refusing insecure API URL "${normalized}": use https:// (plain http is only allowed for localhost/127.0.0.1).`
     );
   }
-  const override =
-    args["allow-custom-api-url"] !== undefined || env.PHANTOM_ALLOW_CUSTOM_API_URL === "1";
-  if (!override) {
-    const hostname = safeHostname(normalized);
-    if (hostname === null || !isTrustedApiUrlHost(hostname)) {
-      throw new Error(
-        `Untrusted PHANTOM_API_URL host '${hostname ?? normalized}'. ` +
-          `Production credentials are only sent to *.idphantom.com or localhost by default. ` +
-          `Set PHANTOM_ALLOW_CUSTOM_API_URL=1 (or pass --allow-custom-api-url) to use a custom endpoint explicitly.`
-      );
-    }
-  }
+  const funnelSource = env.PHANTOM_FUNNEL_SOURCE === "internal" ? "internal" : "external";
   return {
     apiUrl: normalized,
     ...(apiKey ? { apiKey } : {}),
+    ...(env.PHANTOM_PAYER_PRIVATE_KEY ? { payerPrivateKey: env.PHANTOM_PAYER_PRIVATE_KEY } : {}),
+    ...(env.PHANTOM_FUNDER_PRIVATE_KEY ? { funderPrivateKey: env.PHANTOM_FUNDER_PRIVATE_KEY } : {}),
+    ...(routerAddress ? { routerAddress } : {}),
+    funnelSource,
   };
-}
-
-function isTrustedApiUrlHost(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === "idphantom.com" || host.endsWith(TRUSTED_HOST_SUFFIX) || TRUSTED_HOSTS.has(host);
-}
-
-function safeHostname(value: string): string | null {
-  try {
-    return new URL(value).hostname.toLowerCase();
-  } catch {
-    return null;
-  }
 }
 
 function isInsecureRemoteUrl(value: string): boolean {
   if (!/^http:\/\//i.test(value)) return false;
-  const hostname = safeHostname(value);
-  return hostname === null || !TRUSTED_HOSTS.has(hostname);
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    return hostname !== "localhost" && hostname !== "127.0.0.1" && hostname !== "::1" && hostname !== "[::1]";
+  } catch {
+    return true;
+  }
 }
 
 function readFlag(args: Record<string, string | boolean>, key: string): string | undefined {

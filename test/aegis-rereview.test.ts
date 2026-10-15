@@ -1,13 +1,20 @@
 /**
- * Integration tests over the real stdio transport of the MCP server.
- * Launches the built server as a child process and speaks NDJSON over stdin/stdout.
+ * AGP-012 (AEGIS) - guardas invertidas sobre el transporte stdio real del MCP server.
+ * Lanza src/index.ts como proceso hijo (tsx) y habla por stdin/stdout.
  */
 import { describe, expect, it } from "vitest";
 import { execFileSync, spawn } from "node:child_process";
 import { resolve } from "node:path";
 
 const INDEX = resolve(__dirname, "../dist/src/index.js");
-const TSC = resolve(__dirname, "../node_modules/typescript/bin/tsc");
+// Resolución robusta del tsc: layout monorepo (apps/mcp-server/test -> raíz del
+// repo, 3 niveles) y layout repo espejo standalone (test/ -> raíz, 1 nivel).
+import { existsSync } from "node:fs";
+const TSC_CANDIDATES = [
+  resolve(__dirname, "../../../node_modules/typescript/bin/tsc"),
+  resolve(__dirname, "../node_modules/typescript/bin/tsc"),
+];
+const TSC = TSC_CANDIDATES.find((p) => existsSync(p)) ?? TSC_CANDIDATES[0];
 let built = false;
 
 function ensureBuilt() {
@@ -45,7 +52,7 @@ function parseFirstLine(out: string) {
   return JSON.parse(line ?? "{}");
 }
 
-describe("stdio framing is MCP spec compatible", () => {
+describe("AEGIS R-6 - framing stdio compatible con la especificacion MCP", () => {
   it("un mensaje JSON delimitado por salto de linea recibe una respuesta JSON-RPC sin Content-Length", async () => {
     const s = startServer();
     try {
@@ -75,7 +82,7 @@ describe("stdio framing is MCP spec compatible", () => {
   }, 30_000);
 });
 
-describe("malformed input does not kill the server process", () => {
+describe("AEGIS R-7 - entrada malformada no tumba el proceso", () => {
   it("un mensaje no JSON devuelve -32700 y el servidor sigue vivo para el siguiente request", async () => {
     const s = startServer();
     try {
